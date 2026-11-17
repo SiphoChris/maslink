@@ -21,6 +21,8 @@ export const metadata: Metadata = {
     "Join forces with nearby farms to fulfill bigger produce orders together.",
 };
 
+export const instant = false;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html

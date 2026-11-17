@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
   CalendarDays,
@@ -23,10 +24,19 @@ import {
 } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AuthScreen } from "@/components/auth-screen";
+import { NearbyFarmersMap } from "@/components/nearby-farmers-map";
+import { Button } from "@/components/ui/button";
+import {
+  Map,
+  MapControls,
+  MapMarker,
+  MarkerContent,
+  MarkerPopup,
+} from "@/components/ui/map";
 
 type Order = {
   id: Id<"orders">;
@@ -44,12 +54,41 @@ type Order = {
   status: "open" | "filled";
 };
 
+type DashboardView = "nearby" | "all" | "mine" | "farmers" | "farm";
+
 type FarmProfile = {
   fullName: string;
   farmName: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
+  showOnMap: boolean;
   isComplete: boolean;
 };
+
+type FarmProfileUpdate = Pick<
+  FarmProfile,
+  "fullName" | "farmName" | "location" | "latitude" | "longitude" | "showOnMap"
+> & {
+  latitude: number;
+  longitude: number;
+};
+
+const viewPaths: Record<DashboardView, string> = {
+  nearby: "/marketplace",
+  all: "/orders",
+  mine: "/contributions",
+  farmers: "/farmers",
+  farm: "/farm",
+};
+
+function getDashboardView(pathname: string): DashboardView {
+  if (pathname === "/orders") return "all";
+  if (pathname === "/contributions") return "mine";
+  if (pathname === "/farmers") return "farmers";
+  if (pathname === "/farm") return "farm";
+  return "nearby";
+}
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-ZA", { maximumFractionDigits: 1 }).format(value);
@@ -73,6 +112,25 @@ function getInitials(value: string) {
     .join("");
 }
 
+type LocatedAddress = {
+  address: string;
+  latitude: number;
+  longitude: number;
+};
+
+async function locateAddress(input: { address: string } | { latitude: number; longitude: number }) {
+  const response = await fetch("/api/geocode", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const result = (await response.json()) as LocatedAddress | { error?: string };
+  if (!response.ok || !("address" in result)) {
+    throw new Error("error" in result && result.error ? result.error : "Could not locate this address.");
+  }
+  return result;
+}
+
 export function MarketplaceApp() {
   const { isAuthenticated, isLoading } = useConvexAuth();
 
@@ -84,6 +142,7 @@ export function MarketplaceApp() {
 }
 
 function MarketplaceDashboard() {
+  const pathname = usePathname();
   const profile = useQuery(api.users.getProfile, {});
   const orders = useQuery(api.marketplace.listOrders, {});
   const updateProfile = useMutation(api.users.updateProfile);
@@ -93,7 +152,7 @@ function MarketplaceDashboard() {
   const { signOut } = useAuthActions();
   const router = useRouter();
 
-  const [activeView, setActiveView] = useState<"nearby" | "all" | "mine" | "farm">("nearby");
+  const activeView = getDashboardView(pathname);
   const [search, setSearch] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -132,15 +191,25 @@ function MarketplaceDashboard() {
   const committedCount = allOrders.reduce((sum, order) => sum + order.committedKg, 0);
   const locationName = profile?.location || "your area";
 
+  function navigateToView(view: DashboardView) {
+    setMobileNavOpen(false);
+    router.push(viewPaths[view]);
+  }
+
   async function handleSignOut() {
     await signOut();
     router.replace("/");
   }
 
-  async function handleProfileSave(values: Omit<FarmProfile, "isComplete">) {
-    await updateProfile(values);
-    setActiveView("nearby");
-    setFeedback({ kind: "success", message: "Your farm profile is ready. Welcome to the network!" });
+  async function handleProfileSave(values: FarmProfileUpdate) {
+    setBusy(true);
+    try {
+      await updateProfile(values);
+      navigateToView("nearby");
+      setFeedback({ kind: "success", message: "Your farm profile is ready. Welcome to the network!" });
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleCreateOrder(values: {
@@ -202,21 +271,24 @@ function MarketplaceDashboard() {
         </div>
         <div className="sidebar-section-label">WORKSPACE</div>
         <nav className="side-nav" aria-label="Main navigation">
-          <button className={`nav-item ${activeView === "nearby" ? "nav-active" : ""}`} onClick={() => { setActiveView("nearby"); setMobileNavOpen(false); }}>
+          <Link href={viewPaths.nearby} className={`nav-item ${activeView === "nearby" ? "nav-active" : ""}`} onClick={() => setMobileNavOpen(false)}>
             <MapPin size={17} /> Nearby orders <span className="nav-live-dot" />
-          </button>
-          <button className={`nav-item ${activeView === "all" ? "nav-active" : ""}`} onClick={() => { setActiveView("all"); setMobileNavOpen(false); }}>
+          </Link>
+          <Link href={viewPaths.farmers} className={`nav-item ${activeView === "farmers" ? "nav-active" : ""}`} onClick={() => setMobileNavOpen(false)}>
+            <Users size={17} /> Nearby farmers
+          </Link>
+          <Link href={viewPaths.all} className={`nav-item ${activeView === "all" ? "nav-active" : ""}`} onClick={() => setMobileNavOpen(false)}>
             <Wheat size={17} /> All orders
-          </button>
-          <button className={`nav-item ${activeView === "mine" ? "nav-active" : ""}`} onClick={() => { setActiveView("mine"); setMobileNavOpen(false); }}>
+          </Link>
+          <Link href={viewPaths.mine} className={`nav-item ${activeView === "mine" ? "nav-active" : ""}`} onClick={() => setMobileNavOpen(false)}>
             <Users size={17} /> My contributions
             {ordersJoined > 0 ? <span className="nav-count">{ordersJoined}</span> : null}
-          </button>
+          </Link>
         </nav>
         <div className="sidebar-section-label sidebar-section-gap">YOUR FARM</div>
-        <button className={`nav-item ${activeView === "farm" ? "nav-active" : ""}`} onClick={() => { setActiveView("farm"); setMobileNavOpen(false); }}>
+        <Link href={viewPaths.farm} className={`nav-item ${activeView === "farm" ? "nav-active" : ""}`} onClick={() => setMobileNavOpen(false)}>
           <Sprout size={17} /> Farm profile
-        </button>
+        </Link>
         <div className="sidebar-help">
           <div className="help-icon"><CircleHelp size={17} /></div>
           <strong>Good things grow together.</strong>
@@ -234,7 +306,7 @@ function MarketplaceDashboard() {
           <button className="icon-button mobile-menu-button" aria-label="Open navigation" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
             <Menu size={19} />
           </button>
-          <div className="breadcrumbs"><span>Workspace</span><span className="crumb-slash">/</span><strong>{activeView === "farm" ? "Farm profile" : activeView === "mine" ? "My contributions" : activeView === "all" ? "All orders" : "Marketplace"}</strong></div>
+          <div className="breadcrumbs"><span>Workspace</span><span className="crumb-slash">/</span><strong>{activeView === "farm" ? "Farm profile" : activeView === "farmers" ? "Nearby farmers" : activeView === "mine" ? "My contributions" : activeView === "all" ? "All orders" : "Marketplace"}</strong></div>
           <div className="topbar-actions">
             <div className="location-pill"><MapPin size={14} /><span>{locationName}</span><ChevronDown size={14} /></div>
             <span className="topbar-divider" />
@@ -260,6 +332,8 @@ function MarketplaceDashboard() {
               isSaving={busy}
               onSave={handleProfileSave}
             />
+          ) : activeView === "farmers" ? (
+            <NearbyFarmersMap latitude={profile.latitude} longitude={profile.longitude} />
           ) : (
             <>
               <div className="welcome-row">
@@ -298,16 +372,16 @@ function MarketplaceDashboard() {
                     <div className="section-title-row"><h2>{activeView === "mine" ? "Orders you have joined" : activeView === "all" ? "All open orders" : "Orders near you"}</h2><span className="live-tag"><span /> LIVE</span></div>
                     <p>{activeView === "mine" ? "Your pledged produce, in one place." : "Small contributions add up to big deliveries."}</p>
                   </div>
-                  <button className="text-button" onClick={() => setActiveView(activeView === "all" ? "nearby" : "all")}>
+                  <Link className="text-button" href={viewPaths[activeView === "all" ? "nearby" : "all"]}>
                     {activeView === "all" ? "Show nearby" : "View all orders"} <ArrowRight size={15} />
-                  </button>
+                  </Link>
                 </div>
 
                 <div className="market-toolbar">
                   <div className="market-tabs" role="tablist" aria-label="Order filters">
-                    <button className={activeView === "nearby" ? "tab-active" : ""} onClick={() => setActiveView("nearby")}>Near me</button>
-                    <button className={activeView === "all" ? "tab-active" : ""} onClick={() => setActiveView("all")}>All orders</button>
-                    <button className={activeView === "mine" ? "tab-active" : ""} onClick={() => setActiveView("mine")}>Joined by me</button>
+                    <Link className={activeView === "nearby" ? "tab-active" : ""} href={viewPaths.nearby}>Near me</Link>
+                    <Link className={activeView === "all" ? "tab-active" : ""} href={viewPaths.all}>All orders</Link>
+                    <Link className={activeView === "mine" ? "tab-active" : ""} href={viewPaths.mine}>Joined by me</Link>
                   </div>
                   <div className="toolbar-right">
                     <label className="search-field">
@@ -315,7 +389,7 @@ function MarketplaceDashboard() {
                       <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search crops or places" aria-label="Search crops or places" />
                       {search ? <button aria-label="Clear search" onClick={() => setSearch("")}><X size={14} /></button> : null}
                     </label>
-                    <button className="filter-button" onClick={() => setActiveView("all")} aria-label="Show all orders"><SlidersHorizontal size={16} /></button>
+                    <Link className="filter-button" href={viewPaths.all} aria-label="Show all orders"><SlidersHorizontal size={16} /></Link>
                   </div>
                 </div>
 
@@ -337,7 +411,7 @@ function MarketplaceDashboard() {
                     <span className="empty-illustration"><Wheat size={27} /></span>
                     <h3>{activeView === "mine" ? "No joined orders yet" : search ? "No orders match your search" : activeView === "nearby" ? `No open orders in ${profile.location} yet` : "Be the first to post an order"}</h3>
                     <p>{activeView === "mine" ? "Browse nearby requests and pledge the produce you can share." : "Post a buyer request or check back soon as nearby farmers add opportunities."}</p>
-                    {activeView === "mine" || activeView === "nearby" ? <button className="button button-secondary" onClick={() => setActiveView("all")}>Browse all orders <ArrowRight size={15} /></button> : <button className="button button-primary" onClick={() => setIsPosting(true)}><Plus size={16} /> Post the first order</button>}
+                    {activeView === "mine" || activeView === "nearby" ? <Link className="button button-secondary" href={viewPaths.all}>Browse all orders <ArrowRight size={15} /></Link> : <button className="button button-primary" onClick={() => setIsPosting(true)}><Plus size={16} /> Post the first order</button>}
                   </div>
                 )}
               </section>
@@ -419,23 +493,87 @@ function ProfileForm({
 }: {
   profile: FarmProfile | null;
   isSaving: boolean;
-  onSave: (values: Omit<FarmProfile, "isComplete">) => Promise<void>;
+  onSave: (values: FarmProfileUpdate) => Promise<void>;
 }) {
   const [fullName, setFullName] = useState(profile?.fullName ?? "");
   const [farmName, setFarmName] = useState(profile?.farmName ?? "");
   const [location, setLocation] = useState(profile?.location ?? "");
+  const [latitude, setLatitude] = useState<number | null>(profile?.latitude ?? null);
+  const [longitude, setLongitude] = useState<number | null>(profile?.longitude ?? null);
+  const [showOnMap, setShowOnMap] = useState(profile?.showOnMap ?? false);
   const [error, setError] = useState<string | null>(null);
-  const isEditing = profile?.isComplete;
+  const [isLocating, setIsLocating] = useState(false);
+  const isEditing = Boolean(profile?.fullName || profile?.farmName);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (latitude === null || longitude === null) {
+      setError("Locate your farm address or use the map pin before saving.");
+      return;
+    }
     try {
-      await onSave({ fullName, farmName, location });
+      await onSave({ fullName, farmName, location, latitude, longitude, showOnMap });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not save your profile.");
     }
   }
+
+  async function geocodeAddress() {
+    setError(null);
+    setIsLocating(true);
+    try {
+      const result = await locateAddress({ address: location });
+      setLocation(result.address);
+      setLatitude(result.latitude);
+      setLongitude(result.longitude);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not locate this address.");
+    } finally {
+      setIsLocating(false);
+    }
+  }
+
+  async function useMapPin() {
+    if (latitude === null || longitude === null) return;
+    setError(null);
+    setIsLocating(true);
+    try {
+      const result = await locateAddress({ latitude, longitude });
+      setLocation(result.address);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not identify this map location.");
+    } finally {
+      setIsLocating(false);
+    }
+  }
+
+  function useCurrentLocation() {
+    if (!navigator.geolocation) {
+      setError("This browser does not support location access.");
+      return;
+    }
+    setError(null);
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLatitude(coords.latitude);
+        setLongitude(coords.longitude);
+        setIsLocating(false);
+      },
+      () => {
+        setError("Could not access your current location. Check your browser permissions.");
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  const hasCoordinates =
+    typeof latitude === "number" &&
+    Number.isFinite(latitude) &&
+    typeof longitude === "number" &&
+    Number.isFinite(longitude);
 
   return (
     <section className="profile-setup">
@@ -443,14 +581,77 @@ function ProfileForm({
         <div className="profile-setup-icon"><Sprout size={26} /></div>
         <span className="eyebrow eyebrow-light">YOUR FARM, YOUR NETWORK</span>
         <h1>{isEditing ? "Your farm profile" : "Let’s get your farm on the map."}</h1>
-        <p>Farmers nearby use your location to find orders they can fulfill together. You’re always in control of what you share.</p>
-        <div className="profile-promise"><ShieldCheck size={16} /><span>Only your farm name and area are shown on order listings.</span></div>
+        <p>Use your address or map pin to find farms nearby. Your exact address stays private.</p>
+        <div className="profile-promise"><ShieldCheck size={16} /><span>Nearby farmers see only your farm name and an approximate map location when you opt in.</span></div>
       </div>
       <form className="profile-form" onSubmit={submit}>
         <div className="profile-form-heading"><span className="eyebrow">FARM DETAILS</span><h2>{isEditing ? "Update your details" : "Create your farm profile"}</h2><p>It only takes a moment to find your people.</p></div>
         <label>Full name<input required minLength={2} maxLength={70} value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="e.g. Thandi Mokoena" /></label>
         <label>Farm or cooperative name<input required minLength={2} maxLength={70} value={farmName} onChange={(event) => setFarmName(event.target.value)} placeholder="e.g. Green Valley Farm" /></label>
-        <label>Town or farming area<div className="input-with-icon"><MapPin size={16} /><input required minLength={2} maxLength={80} value={location} onChange={(event) => setLocation(event.target.value)} placeholder="e.g. Stellenbosch, Western Cape" /></div></label>
+        <label>Farm address or area<div className="input-with-icon"><MapPin size={16} /><input required minLength={2} maxLength={200} value={location} onChange={(event) => { setLocation(event.target.value); setLatitude(null); setLongitude(null); }} placeholder="e.g. Stellenbosch, Western Cape" /></div></label>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={geocodeAddress} disabled={isLocating || location.trim().length < 2}>
+            {isLocating ? <LoaderCircle className="animate-spin" /> : <Search />}
+            Locate address
+          </Button>
+          <Button type="button" variant="outline" onClick={useCurrentLocation} disabled={isLocating}>
+            <MapPin />
+            Use current location
+          </Button>
+          {hasCoordinates ? (
+            <Button type="button" variant="outline" onClick={useMapPin} disabled={isLocating}>
+              Use map pin
+            </Button>
+          ) : null}
+        </div>
+        <div className="mt-4 h-52 overflow-hidden rounded-xl border border-[#e8ebe5] bg-[#f7f8f5]">
+          <Map
+            key={hasCoordinates ? `${latitude},${longitude}` : "africa"}
+            center={hasCoordinates ? [longitude, latitude] : [25, -29]}
+            zoom={hasCoordinates ? 11 : 5}
+          >
+            <MapControls position="top-right" showZoom showLocate />
+            {hasCoordinates ? (
+              <MapMarker
+                draggable
+                longitude={longitude}
+                latitude={latitude}
+                onDragEnd={(coordinates) => {
+                  setLatitude(coordinates.lat);
+                  setLongitude(coordinates.lng);
+                }}
+              >
+                <MarkerContent>
+                  <div className="grid size-9 place-items-center rounded-full border-2 border-white bg-[#2e583d] text-white shadow-lg">
+                    <MapPin className="size-4" />
+                  </div>
+                </MarkerContent>
+                <MarkerPopup>
+                  <p className="px-3 py-2 text-sm font-medium text-[#202821]">Drag to adjust your farm pin</p>
+                </MarkerPopup>
+              </MapMarker>
+            ) : null}
+          </Map>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-[#737b73]">
+          {hasCoordinates
+            ? `Map pin: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}. Drag it to adjust.`
+            : "Locate your address or use your current location to place a pin on the map."}
+        </p>
+        <label className="mt-4 flex items-start gap-3 text-sm leading-5 text-[#4c564d]">
+          <input
+            className="mt-1 size-4 accent-[#2e583d]"
+            type="checkbox"
+            checked={showOnMap}
+            onChange={(event) => setShowOnMap(event.target.checked)}
+          />
+          <span>
+            <strong className="font-semibold text-[#202821]">Show my farm on nearby maps</strong>
+            <span className="mt-1 block text-xs text-[#737b73]">
+              Share your farm name and approximate area with signed-in MASLink farmers. Your exact address stays private.
+            </span>
+          </span>
+        </label>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         <button className="button button-primary profile-submit" type="submit" disabled={isSaving}>
           {isSaving ? <span className="spinner" /> : <Check size={17} />}

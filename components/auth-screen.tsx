@@ -7,7 +7,7 @@ import type {
   UsernamePasskeyAutofillError,
 } from "@convex-dev/auth/methods/username-passkey/react";
 import { Leaf, ShieldCheck, Sprout } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 
 type PasskeyError =
@@ -54,6 +54,7 @@ export function AuthScreen() {
   const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   const displayedError =
     error ?? (autofill.lastError ? getPasskeyErrorMessage(autofill.lastError) : null);
@@ -64,7 +65,7 @@ export function AuthScreen() {
     try {
       const result = await signIn({ username });
       if (result.status === "complete") {
-        router.replace("/");
+        if (pathname === "/") router.replace("/marketplace");
         return;
       }
       setError(getPasskeyErrorMessage(result.userError));

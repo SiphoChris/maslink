@@ -6,7 +6,10 @@ export default defineSchema({
     fullName: v.optional(v.string()),
     farmName: v.optional(v.string()),
     location: v.optional(v.string()),
-  }),
+    locationLat: v.optional(v.number()),
+    locationLng: v.optional(v.number()),
+    showOnMap: v.optional(v.boolean()),
+  }).index("by_location_visibility_and_lat", ["showOnMap", "locationLat"]),
   orders: defineTable({
     createdBy: v.id("users"),
     createdByFarmName: v.string(),
