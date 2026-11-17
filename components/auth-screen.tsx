@@ -6,7 +6,8 @@ import type {
   SignInWithUsernamePasskeyResult,
   UsernamePasskeyAutofillError,
 } from "@convex-dev/auth/methods/username-passkey/react";
-import { Leaf, ShieldCheck, Sprout } from "lucide-react";
+import Image from "next/image";
+import { ShieldCheck, Sprout } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 
@@ -79,30 +80,28 @@ export function AuthScreen() {
     <main className="auth-page">
       <section className="auth-story">
         <div className="brand-lockup brand-lockup-light">
-          <span className="brand-mark"><Leaf size={19} strokeWidth={2.2} /></span>
+          <span className="brand-logo"><Image src="/maslink-logo.svg" alt="" width={40} height={40} /></span>
           <span>MASLink</span>
         </div>
         <div className="story-copy">
-          <span className="eyebrow eyebrow-light"><Sprout size={14} /> FARMERS, TOGETHER</span>
-          <h1>Big orders.<br /><em>Stronger</em> farms.</h1>
+          <span className="eyebrow eyebrow-light"><Sprout size={14} /> Farmers, together</span>
+          <h1>Big orders.<br /><strong>Stronger</strong> farms.</h1>
           <p>Find nearby farmers, combine your harvests, and say yes to the orders you could not fill alone.</p>
         </div>
         <div className="story-note">
           <span className="story-note-icon"><ShieldCheck size={18} /></span>
           <span><strong>Your farm, your terms</strong><small>Join only the orders that work for you.</small></span>
         </div>
-        <div className="story-orbit story-orbit-one" />
-        <div className="story-orbit story-orbit-two" />
       </section>
 
       <section className="auth-panel">
         <div className="auth-mobile-brand brand-lockup">
-          <span className="brand-mark"><Leaf size={18} strokeWidth={2.2} /></span>
+          <span className="brand-logo"><Image src="/maslink-logo.svg" alt="" width={40} height={40} /></span>
           <span>MASLink</span>
         </div>
         <div className="auth-form-wrap">
-          <span className="eyebrow">WELCOME TO YOUR FARM NETWORK</span>
-          <h2>Grow together.</h2>
+          <span className="eyebrow">Welcome to your farm network</span>
+          <h2>Grow <span>together.</span></h2>
           <p className="auth-intro">Sign in or create your farmer account with a passkey.</p>
           <form onSubmit={handleSubmit} className="auth-form">
             <label htmlFor="username">Your username</label>
@@ -121,11 +120,11 @@ export function AuthScreen() {
             {displayedError ? <p className="form-error" role="alert">{displayedError}</p> : null}
             <button className="button button-primary auth-submit" type="submit" disabled={pending}>
               {pending ? <span className="spinner" /> : <ShieldCheck size={17} />}
-              {pending ? "Waiting for passkey…" : "Continue with passkey"}
+              {pending ? "Waiting for passkey" : "Continue with passkey"}
             </button>
           </form>
           <p className="auth-footnote">New here? Choosing a new username creates your account. Your device will ask you to set up a passkey.</p>
-          <div className="auth-divider"><span /> SECURE SIGN-IN <span /></div>
+          <div className="auth-divider"><span /> Secure sign-in <span /></div>
           <p className="auth-security"><ShieldCheck size={15} /> Your passkey stays on your device. MASLink never sees it.</p>
         </div>
         <footer className="auth-footer"><span>© 2026 MASLink</span><span>Made for the people who grow our food.</span></footer>

@@ -43,7 +43,7 @@ export function NearbyFarmersMap({
     <section className="space-y-5">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="eyebrow"><span className="eyebrow-line" /> FARMER NETWORK</div>
+          <div className="eyebrow">Farmer network</div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#202821]">Farmers near you</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#737b73]">
             Find nearby farms open to connecting and pooling produce. Their exact address is never shown.
@@ -67,7 +67,7 @@ export function NearbyFarmersMap({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.8fr)]">
         <div className="relative h-[420px] overflow-hidden rounded-xl border border-[#e8ebe5] bg-white shadow-sm sm:h-[520px]">
           {!hasOrigin ? (
-            <div className="absolute inset-0 z-10 grid place-items-center bg-white/90 p-8 text-center backdrop-blur-sm">
+            <div className="absolute inset-0 z-10 grid place-items-center bg-[#f6f3eb]/95 p-8 text-center">
               <div className="max-w-sm">
                 <MapPin className="mx-auto mb-3 size-8 text-[#507b55]" />
                 <h2 className="text-lg font-semibold text-[#202821]">Add your farm location</h2>
@@ -82,7 +82,7 @@ export function NearbyFarmersMap({
             {hasOrigin ? (
               <MapMarker longitude={longitude} latitude={latitude}>
                 <MarkerContent>
-                  <div className="grid size-9 place-items-center rounded-full border-2 border-white bg-[#2e583d] text-white shadow-lg">
+                  <div className="grid size-9 place-items-center rounded-full border-2 border-white bg-[#2e583d] text-white shadow-sm">
                     <MapPin className="size-4" />
                   </div>
                 </MarkerContent>
@@ -99,7 +99,7 @@ export function NearbyFarmersMap({
                 latitude={farmer.latitude}
               >
                 <MarkerContent>
-                  <div className="grid size-9 place-items-center rounded-full border-2 border-white bg-[#b7773d] text-white shadow-lg">
+                  <div className="grid size-9 place-items-center rounded-full border-2 border-white bg-[#a64f38] text-white shadow-sm">
                     <Sprout className="size-4" />
                   </div>
                 </MarkerContent>
@@ -122,7 +122,7 @@ export function NearbyFarmersMap({
               <div>
                 <h2 className="font-semibold text-[#202821]">Discover farms</h2>
                 <p className="mt-1 text-xs text-[#737b73]">
-                  {farmers === undefined ? "Finding farmers…" : `${matchingFarmers.length} farms within ${radiusKm} km`}
+                  {farmers === undefined ? "Finding farmers" : `${matchingFarmers.length} farms within ${radiusKm} km`}
                 </p>
               </div>
             </div>
@@ -140,7 +140,7 @@ export function NearbyFarmersMap({
 
           <div className="flex-1 divide-y divide-[#eef0ec] overflow-y-auto">
             {farmers === undefined ? (
-              <p className="p-5 text-sm text-[#737b73]">Loading nearby farmers…</p>
+              <p className="p-5 text-sm text-[#737b73]">Loading nearby farmers</p>
             ) : matchingFarmers.length === 0 ? (
               <p className="p-5 text-sm leading-6 text-[#737b73]">
                 {search ? "No farms match that name." : "No farmers have opted into nearby discovery in this radius yet."}

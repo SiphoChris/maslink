@@ -16,9 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MASLink — Grow together",
+  title: "MASLink | Grow together",
   description:
     "Join forces with nearby farms to fulfill bigger produce orders together.",
+  icons: {
+    icon: "/maslink-logo.svg",
+  },
 };
 
 export const instant = false;

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   CalendarDays,
@@ -135,7 +136,7 @@ export function MarketplaceApp() {
   const { isAuthenticated, isLoading } = useConvexAuth();
 
   if (isLoading) {
-    return <div className="full-loader"><LoaderCircle className="spin" size={22} /> Connecting to your farm network…</div>;
+    return <div className="full-loader"><LoaderCircle className="spin" size={22} /> Connecting to your farm network</div>;
   }
 
   return isAuthenticated ? <MarketplaceDashboard /> : <AuthScreen />;
@@ -266,13 +267,13 @@ function MarketplaceDashboard() {
     <div className="app-shell">
       <aside className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-brand">
-          <span className="brand-mark"><Leaf size={18} strokeWidth={2.2} /></span>
+          <span className="brand-logo"><Image src="/maslink-logo.svg" alt="" width={40} height={40} /></span>
           <span>MASLink</span>
         </div>
-        <div className="sidebar-section-label">WORKSPACE</div>
+        <div className="sidebar-section-label">Workspace</div>
         <nav className="side-nav" aria-label="Main navigation">
           <Link href={viewPaths.nearby} className={`nav-item ${activeView === "nearby" ? "nav-active" : ""}`} onClick={() => setMobileNavOpen(false)}>
-            <MapPin size={17} /> Nearby orders <span className="nav-live-dot" />
+            <MapPin size={17} /> Nearby orders
           </Link>
           <Link href={viewPaths.farmers} className={`nav-item ${activeView === "farmers" ? "nav-active" : ""}`} onClick={() => setMobileNavOpen(false)}>
             <Users size={17} /> Nearby farmers
@@ -285,7 +286,7 @@ function MarketplaceDashboard() {
             {ordersJoined > 0 ? <span className="nav-count">{ordersJoined}</span> : null}
           </Link>
         </nav>
-        <div className="sidebar-section-label sidebar-section-gap">YOUR FARM</div>
+        <div className="sidebar-section-label sidebar-section-gap">Your farm</div>
         <Link href={viewPaths.farm} className={`nav-item ${activeView === "farm" ? "nav-active" : ""}`} onClick={() => setMobileNavOpen(false)}>
           <Sprout size={17} /> Farm profile
         </Link>
@@ -325,7 +326,7 @@ function MarketplaceDashboard() {
           ) : null}
 
           {profile === undefined || orders === undefined ? (
-            <div className="content-loader"><LoaderCircle className="spin" size={21} /> Loading the local market…</div>
+            <div className="content-loader"><LoaderCircle className="spin" size={21} /> Loading the local market</div>
           ) : !profile?.isComplete || activeView === "farm" ? (
             <ProfileForm
               profile={profile}
@@ -338,8 +339,8 @@ function MarketplaceDashboard() {
             <>
               <div className="welcome-row">
                 <div>
-                  <div className="eyebrow"><span className="eyebrow-line" /> YOUR LOCAL FARM NETWORK</div>
-                  <h1>{activeView === "mine" ? "Your shared harvest" : activeView === "all" ? "Orders that need you" : <>Good morning, {profile.fullName.split(" ")[0]} <span className="heading-sun">✳</span></>}</h1>
+                  <div className="eyebrow">Your local farm network</div>
+                  <h1>{activeView === "mine" ? "Your shared harvest" : activeView === "all" ? "Orders that need you" : <>Good morning, {profile.fullName.split(" ")[0]}</>}</h1>
                   <p className="page-subtitle">{activeView === "mine" ? "Track the orders you are helping bring to market." : "Pool your produce with nearby farms and unlock bigger orders."}</p>
                 </div>
                 <button className="button button-primary post-order-button" onClick={() => setIsPosting(true)}>
@@ -349,18 +350,17 @@ function MarketplaceDashboard() {
 
               <section className="summary-grid" aria-label="Marketplace overview">
                 <article className="summary-card summary-card-feature">
-                  <div className="summary-top"><span>OPEN OPPORTUNITIES</span><span className="summary-icon summary-icon-green"><Wheat size={17} /></span></div>
+                  <div className="summary-top"><span>Open opportunities</span><span className="summary-icon summary-icon-green"><Wheat size={17} /></span></div>
                   <div className="summary-value">{openOrderCount}<span className="summary-unit">orders</span></div>
-                  <div className="summary-foot"><span className="status-dot" /> Ready for your harvest</div>
-                  <div className="summary-decoration"><Leaf size={82} /></div>
+                  <div className="summary-foot">Ready for your harvest</div>
                 </article>
                 <article className="summary-card">
-                  <div className="summary-top"><span>YOUR CONTRIBUTION</span><span className="summary-icon summary-icon-sand"><Sprout size={17} /></span></div>
+                  <div className="summary-top"><span>Your contribution</span><span className="summary-icon summary-icon-sand"><Sprout size={17} /></span></div>
                   <div className="summary-value">{formatNumber(totalPledged)}<span className="summary-unit">kg</span></div>
                   <div className="summary-foot">Across {ordersJoined} {ordersJoined === 1 ? "shared order" : "shared orders"}</div>
                 </article>
                 <article className="summary-card">
-                  <div className="summary-top"><span>ALREADY POOLED</span><span className="summary-icon summary-icon-blue"><Users size={17} /></span></div>
+                  <div className="summary-top"><span>Already pooled</span><span className="summary-icon summary-icon-blue"><Users size={17} /></span></div>
                   <div className="summary-value">{formatNumber(committedCount)}<span className="summary-unit">kg</span></div>
                   <div className="summary-foot"><span className="mini-avatar-stack"><i>F</i><i>F</i><i>F</i></span> Farmers showing up together</div>
                 </article>
@@ -369,7 +369,7 @@ function MarketplaceDashboard() {
               <section className="market-section">
                 <div className="section-heading">
                   <div>
-                    <div className="section-title-row"><h2>{activeView === "mine" ? "Orders you have joined" : activeView === "all" ? "All open orders" : "Orders near you"}</h2><span className="live-tag"><span /> LIVE</span></div>
+                    <div className="section-title-row"><h2>{activeView === "mine" ? "Orders you have joined" : activeView === "all" ? "All open orders" : "Orders near you"}</h2></div>
                     <p>{activeView === "mine" ? "Your pledged produce, in one place." : "Small contributions add up to big deliveries."}</p>
                   </div>
                   <Link className="text-button" href={viewPaths[activeView === "all" ? "nearby" : "all"]}>
@@ -452,7 +452,7 @@ function OrderCard({
       <div className="order-card-head">
         <div className={`crop-illustration ${cropClass}`}>{cropGlyph}</div>
         <span className={`order-badge ${order.status === "filled" ? "order-badge-filled" : ""}`}>
-          <span /> {order.status === "filled" ? "FULLY POOLED" : "OPEN TO JOIN"}
+        <span /> {order.status === "filled" ? "Pooled" : "Open to join"}
         </span>
         <button className="order-more" title="Order details"><CircleHelp size={17} /></button>
       </div>
@@ -579,13 +579,13 @@ function ProfileForm({
     <section className="profile-setup">
       <div className="profile-setup-aside">
         <div className="profile-setup-icon"><Sprout size={26} /></div>
-        <span className="eyebrow eyebrow-light">YOUR FARM, YOUR NETWORK</span>
+        <span className="eyebrow eyebrow-light">Your farm, your network</span>
         <h1>{isEditing ? "Your farm profile" : "Let’s get your farm on the map."}</h1>
         <p>Use your address or map pin to find farms nearby. Your exact address stays private.</p>
         <div className="profile-promise"><ShieldCheck size={16} /><span>Nearby farmers see only your farm name and an approximate map location when you opt in.</span></div>
       </div>
       <form className="profile-form" onSubmit={submit}>
-        <div className="profile-form-heading"><span className="eyebrow">FARM DETAILS</span><h2>{isEditing ? "Update your details" : "Create your farm profile"}</h2><p>It only takes a moment to find your people.</p></div>
+        <div className="profile-form-heading"><span className="eyebrow">Farm details</span><h2>{isEditing ? "Update your details" : "Create your farm profile"}</h2><p>It only takes a moment to find your people.</p></div>
         <label>Full name<input required minLength={2} maxLength={70} value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="e.g. Thandi Mokoena" /></label>
         <label>Farm or cooperative name<input required minLength={2} maxLength={70} value={farmName} onChange={(event) => setFarmName(event.target.value)} placeholder="e.g. Green Valley Farm" /></label>
         <label>Farm address or area<div className="input-with-icon"><MapPin size={16} /><input required minLength={2} maxLength={200} value={location} onChange={(event) => { setLocation(event.target.value); setLatitude(null); setLongitude(null); }} placeholder="e.g. Stellenbosch, Western Cape" /></div></label>
@@ -622,7 +622,7 @@ function ProfileForm({
                 }}
               >
                 <MarkerContent>
-                  <div className="grid size-9 place-items-center rounded-full border-2 border-white bg-[#2e583d] text-white shadow-lg">
+                  <div className="grid size-9 place-items-center rounded-full border-2 border-white bg-[#2e583d] text-white shadow-sm">
                     <MapPin className="size-4" />
                   </div>
                 </MarkerContent>
@@ -655,7 +655,7 @@ function ProfileForm({
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         <button className="button button-primary profile-submit" type="submit" disabled={isSaving}>
           {isSaving ? <span className="spinner" /> : <Check size={17} />}
-          {isSaving ? "Saving profile…" : isEditing ? "Save changes" : "Continue to marketplace"}
+          {isSaving ? "Saving profile" : isEditing ? "Save changes" : "Continue to marketplace"}
         </button>
         <p className="profile-hint">You can change your details any time from your farm profile.</p>
       </form>
@@ -721,9 +721,9 @@ function CreateOrderModal({
           <label>Delivery area<input required maxLength={80} value={deliveryLocation} onChange={(event) => setDeliveryLocation(event.target.value)} placeholder="Town or farming area" /></label>
           <label>Needed by<input required type="date" min={new Date().toISOString().slice(0, 10)} value={deadline} onChange={(event) => setDeadline(event.target.value)} /></label>
         </div>
-        <label>Extra details <span className="optional-label">OPTIONAL</span><textarea maxLength={240} rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Grade, packaging, collection details…" /></label>
+        <label>Extra details <span className="optional-label">Optional</span><textarea maxLength={240} rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Grade, packaging, collection details" /></label>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        <div className="modal-actions"><button type="button" className="button button-quiet" onClick={onClose}>Cancel</button><button type="submit" className="button button-primary" disabled={isBusy}>{isBusy ? <span className="spinner" /> : <Plus size={16} />}{isBusy ? "Posting…" : "Publish order"}</button></div>
+        <div className="modal-actions"><button type="button" className="button button-quiet" onClick={onClose}>Cancel</button><button type="submit" className="button button-primary" disabled={isBusy}>{isBusy ? <span className="spinner" /> : <Plus size={16} />}{isBusy ? "Posting" : "Publish order"}</button></div>
       </form>
     </Modal>
   );
@@ -764,7 +764,7 @@ function JoinOrderModal({
         {amount > 0 && amount <= remaining ? <p className="pledge-estimate">Estimated order value: <strong>R{formatNumber(amount * order.pricePerKg)}</strong></p> : null}
         <p className="pledge-note"><ShieldCheck size={15} /> Your pledge is a commitment request. Confirm timing and collection with the other farms before delivery.</p>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        <div className="modal-actions"><button type="button" className="button button-quiet" onClick={onClose}>Not now</button><button type="submit" className="button button-primary" disabled={isBusy || amount <= 0 || amount > remaining}>{isBusy ? <span className="spinner" /> : <ArrowRight size={16} />}{isBusy ? "Joining…" : "Confirm my contribution"}</button></div>
+        <div className="modal-actions"><button type="button" className="button button-quiet" onClick={onClose}>Not now</button><button type="submit" className="button button-primary" disabled={isBusy || amount <= 0 || amount > remaining}>{isBusy ? <span className="spinner" /> : <ArrowRight size={16} />}{isBusy ? "Joining" : "Confirm my contribution"}</button></div>
       </form>
     </Modal>
   );
